@@ -1,0 +1,702 @@
+{
+  "name": "Automated lab kit order intake",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "apprCfZCJC57aV4B1",
+          "mode": "list",
+          "cachedResultName": "Doctors_kit",
+          "cachedResultUrl": "https://airtable.com/apprCfZCJC57aV4B1"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblxXSpGGgEuIL2WT",
+          "mode": "list",
+          "cachedResultName": "Authorized Clients",
+          "cachedResultUrl": "https://airtable.com/apprCfZCJC57aV4B1/tblxXSpGGgEuIL2WT"
+        },
+        "filterByFormula": "={Client ID}='{{ $json.body.clientId }}'",
+        "returnAll": false,
+        "limit": 5,
+        "options": {}
+      },
+      "id": "11433527-9dc3-4146-9c3c-53b27976c318",
+      "name": "Check Client ID in Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        -976,
+        512
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input data\nconst inputData = $input.first().json;\n\n// Try to get Airtable results\nlet airtableResults = [];\ntry {\n  airtableResults = $('Check Client ID in Airtable').all();\n} catch (error) {\n  console.log('No Airtable data received');\n}\n\nconsole.log('=== DEBUG ===');\nconsole.log('Airtable results:', JSON.stringify(airtableResults));\nconsole.log('Results count:', airtableResults.length);\n\n// Default values\nlet isAuthorized = false;\nlet clientCompany = 'Unknown';\nlet clientEmail = '';\n\n// Only authorize if we actually got data from Airtable\nif (airtableResults && airtableResults.length > 0) {\n  const record = airtableResults[0];\n  \n  // Check if record has actual data (not empty object)\n  if (record && record.json && Object.keys(record.json).length > 0) {\n    console.log('Found valid record:', JSON.stringify(record.json));\n    isAuthorized = true;\n    \n    // Extract company and email\n    const fields = record.json.fields || record.json;\n    clientCompany = fields.CompanyName || fields['Company Name'] || 'Unknown';\n    clientEmail = fields.Email || fields.email || '';\n  } else {\n    console.log('Record is empty object');\n  }\n} else {\n  console.log('No records found in Airtable');\n}\n\nconsole.log('Final isAuthorized:', isAuthorized);\n\nreturn [{\n  json: {\n    doctorName: inputData.doctorName,\n    clientId: inputData.clientId,\n    productName: inputData.productName,\n    quantity: inputData.quantity,\n    submissionTime: inputData.submissionTime,\n    isAuthorized: isAuthorized,\n    clientCompany: clientCompany,\n    clientEmail: clientEmail,\n    authStatus: isAuthorized ? 'APPROVED' : 'REJECTED'\n  }\n}];\n"
+      },
+      "id": "9b92913c-1cb1-4562-8865-066d90ad66be",
+      "name": "Verify Client ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "apprCfZCJC57aV4B1",
+          "mode": "list",
+          "cachedResultName": "Doctors_kit",
+          "cachedResultUrl": "https://airtable.com/apprCfZCJC57aV4B1"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblE3e8S8DbN4LBuA",
+          "mode": "list",
+          "cachedResultName": "Order",
+          "cachedResultUrl": "https://airtable.com/apprCfZCJC57aV4B1/tblE3e8S8DbN4LBuA"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Doctor Name": "={{ $('Extract Form Data1').item.json.body.doctorName }}",
+            "Quantity": "={{ $('Extract Form Data1').item.json.body.quantity }}",
+            "Client ID": "={{ $('Extract Form Data1').item.json.body.clientId }}",
+            "Product Name": "={{ $('Extract Form Data1').item.json.body.productName }}",
+            "Submission Time": "={{ $('Extract Form Data1').item.json['Submission Time'] }}",
+            "Status": "={{ $json.authStatus }}",
+            "Client Company": "={{ $json.clientCompany }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Doctor Name",
+              "displayName": "Doctor Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Client ID",
+              "displayName": "Client ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Product Name",
+              "displayName": "Product Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Client Company",
+              "displayName": "Client Company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Quantity",
+              "displayName": "Quantity",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Submission Time",
+              "displayName": "Submission Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "79d02157-ec70-4f42-bea4-a90eef6dd35b",
+      "name": "Save to Airtable - Approved",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        -304,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0A3R81H4HE",
+          "mode": "list",
+          "cachedResultName": "lab-orders"
+        },
+        "text": "=:white_check_mark: *New Lab Kit Order - APPROVED*\n\n*Doctor:* {{ $json.fields['Doctor Name'] }}\n*Client ID:* {{ $json.fields['Client ID'] }}\n*Company:* {{ $json.fields['Client Company'] }}\n*Product:* {{ $json.fields['Product Name'] }}\n*Quantity:* {{ $json.fields.Quantity }}\n*Time:* {{ $json.fields['Submission Time'] }}\n\n*Status:* ✅ AUTHORIZED - Process for shipment",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "6cab3aa1-2fa1-4ec9-81bb-94e4538e71d4",
+      "name": "Notify Slack - Approved",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [
+        -80,
+        416
+      ],
+      "webhookId": "1120348c-07b6-445b-a62b-8c1933b89bf7"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0A39S3MEQZ",
+          "mode": "list",
+          "cachedResultName": "security-alerts"
+        },
+        "text": "=:warning: UNAUTHORIZED ORDER ATTEMPT\n\n*Doctor:* {{ $json.fields['Doctor Name'] }}\n*Client ID:* {{ $json.fields['Client ID'] }}\n*Company:* {{ $json.fields['Client Company'] }}\n*Product:* {{ $json.fields['Product Name'] }}\n*Quantity:* {{ $json.fields.Quantity }}\n*Time:* {{ $json.fields['Submission Time'] }}\n\n:warning: This request has been automatically blocked. Please investigate.",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "c5b3bc38-a1d9-47ac-8de2-a1cd463c0e3c",
+      "name": "Notify Slack - Rejected",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [
+        -80,
+        800
+      ],
+      "webhookId": "d0804788-e645-4636-820a-b7331398a707"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "submit-lab-order",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "6d56b523-b932-4b8a-b2cc-612eb9e2e8d3",
+      "name": "Webhook2",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1424,
+        512
+      ],
+      "webhookId": "837e73ad-b10b-46dd-b506-400595d47c04"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "Doctor Name",
+              "value": "={{ $json.body.doctorName }}"
+            },
+            {
+              "name": "Client Id",
+              "value": "={{ $json.body.clientId }}"
+            },
+            {
+              "name": "Product Name",
+              "value": "={{ $json.body.productName }}"
+            },
+            {
+              "name": "Quantity",
+              "value": "={{ $json.body.quantity }}"
+            },
+            {
+              "name": "Submission Time",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c0931e57-515d-4c63-af6b-d946fb5860ab",
+      "name": "Extract Form Data1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -1200,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.isAuthorized }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "08d8f776-89f2-4324-be93-9c234c7d16da",
+      "name": "Is Authorized?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": $json.isAuthorized, \"message\": $json.isAuthorized ? \"Order submitted successfully\" : \"Invalid Client ID - Order rejected\", \"clientId\": $json.clientId } }}",
+        "options": {}
+      },
+      "id": "9c436ebc-63f6-4401-a147-14b80e7fdd8f",
+      "name": "Respond to Webhook1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        464,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "muhammad.bilal.khan2005@gmail.com",
+        "subject": "=Order Confirmation - {{ $('Extract Form Data1').item.json.body.productName }}",
+        "message": "=<h2>Order Confirmed</h2> <p>Dear {{ $json.clientCompany }},</p> <p>Your lab kit order has been received and confirmed:</p> <ul>   <li><strong>Doctor:</strong>{{ $('Extract Form Data1').item.json.body.doctorName }} </li>   <li><strong>Product:</strong> {{ $('Extract Form Data1').item.json.body.productName }}</li>   <li><strong>Quantity:</strong>{{ $('Extract Form Data1').item.json.body.quantity }}</li>   <li><strong>Order Time:</strong> {{ $('Extract Form Data1').item.json['Submission Time'] }}</li> </ul> <p>Your order will be processed and shipped shortly.</p> <p>Thank you for your business!</p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -80,
+        32
+      ],
+      "id": "0ad5596f-7a3d-4fcc-b342-2a21e43eab53",
+      "name": "Send a message",
+      "webhookId": "5f0083c2-d14a-4ce3-a705-1ba8925ad92c"
+    },
+    {
+      "parameters": {
+        "sendTo": "muhammad.bilal.khan2005@gmail.com",
+        "subject": "⚠️ Unauthorized Order Attempt",
+        "message": "=<h2 style='color: #dc3545;'>⚠️ UNAUTHORIZED ORDER ATTEMPT</h2>\n<p>An order was submitted with an invalid Client ID:</p>\n<table style='border-collapse: collapse; width: 100%;'>\n  <tr style='background-color: #f8d7da;'><td style='padding: 8px; border: 1px solid #ddd;'><strong>Doctor Name:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{{ $('Extract Form Data1').item.json['Doctor Name'] }}</td></tr>\n  <tr style='background-color: #f8d7da;'><td style='padding: 8px; border: 1px solid #ddd;'><strong>Client ID:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{{ $('Extract Form Data1').item.json['Client Id'] }}</td></tr>\n  <tr style='background-color: #f8d7da;'><td style='padding: 8px; border: 1px solid #ddd;'><strong>Product Name:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{{ $('Extract Form Data1').item.json['Product Name'] }}</td></tr>\n  <tr style='background-color: #f8d7da;'><td style='padding: 8px; border: 1px solid #ddd;'><strong>Quantity:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{{ $('Extract Form Data1').item.json.Quantity }}</td></tr>\n  <tr style='background-color: #f8d7da;'><td style='padding: 8px; border: 1px solid #ddd;'><strong>Time:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{{ $('Extract Form Data1').item.json['Submission Time'] }}</td></tr>\n</table>\n<p><strong>Status: ❌ REJECTED - Invalid Client ID</strong></p>\n<p>This request has been automatically blocked. Please investigate.</p>",
+        "options": {
+          "appendAttribution": true
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -80,
+        608
+      ],
+      "id": "015055aa-b3b9-453c-bc96-237ac69164af",
+      "name": "Send Security Alert",
+      "webhookId": "5f0083c2-d14a-4ce3-a705-1ba8925ad92c"
+    },
+    {
+      "parameters": {
+        "sendTo": "muhammad.bilal.khan2005@gmail.com",
+        "subject": "New Lab Kit Order",
+        "message": "=<h2>New Lab Kit Order Received</h2>\n<h3>✅ AUTHORIZED CLIENT</h3>\n<table style='border-collapse: collapse; width: 100%;'>\n  <tr><td style='padding: 8px; border: 1px solid #ddd;'><strong>Doctor Name:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{{ $('Extract Form Data1').item.json.body.doctorName }}</td></tr>\n  <tr><td style='padding: 8px; border: 1px solid #ddd;'><strong>Client ID:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{{ $('Extract Form Data1').item.json.body.clientId }}</td></tr>\n  <tr><td style='padding: 8px; border: 1px solid #ddd;'><strong>Client Company:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{{ $json.clientCompany }}</td></tr>\n  <tr><td style='padding: 8px; border: 1px solid #ddd;'><strong>Product Name:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{{ $('Extract Form Data1').item.json.body.productName }}</td></tr>\n  <tr><td style='padding: 8px; border: 1px solid #ddd;'><strong>Quantity:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{{ $('Extract Form Data1').item.json.body.quantity }}</td></tr>\n  <tr><td style='padding: 8px; border: 1px solid #ddd;'><strong>Submission Time:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{{ $('Extract Form Data1').item.json['Submission Time'] }}</td></tr>\n</table>\n<p><strong>Please process this order for shipment.</strong></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -80,
+        224
+      ],
+      "id": "cd75c6a8-02ec-4ef8-89d6-4d559a94cbf8",
+      "name": "Send a message to internal team",
+      "webhookId": "5f0083c2-d14a-4ce3-a705-1ba8925ad92c"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "apprCfZCJC57aV4B1",
+          "mode": "list",
+          "cachedResultName": "Doctors_kit",
+          "cachedResultUrl": "https://airtable.com/apprCfZCJC57aV4B1"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblE3e8S8DbN4LBuA",
+          "mode": "list",
+          "cachedResultName": "Order",
+          "cachedResultUrl": "https://airtable.com/apprCfZCJC57aV4B1/tblE3e8S8DbN4LBuA"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Doctor Name": "={{ $('Extract Form Data1').item.json.body.doctorName }}",
+            "Quantity": "={{ $('Extract Form Data1').item.json.body.quantity }}",
+            "Client ID": "={{ $('Extract Form Data1').item.json.body.clientId }}",
+            "Product Name": "={{ $('Extract Form Data1').item.json.body.productName }}",
+            "Submission Time": "={{ $('Extract Form Data1').item.json['Submission Time'] }}",
+            "Status": "={{ $json.authStatus }}",
+            "Client Company": "={{ $json.clientCompany }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Doctor Name",
+              "displayName": "Doctor Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Client ID",
+              "displayName": "Client ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Product Name",
+              "displayName": "Product Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Client Company",
+              "displayName": "Client Company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Quantity",
+              "displayName": "Quantity",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Submission Time",
+              "displayName": "Submission Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "f6d594b0-6882-4a89-af8b-5f5bc9fe60ec",
+      "name": "Save to Airtable - Rejected1",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        -304,
+        704
+      ]
+    }
+  ],
+  "pinData": {
+    "Webhook2": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n1140.app.n8n.cloud",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0",
+            "content-length": "98",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-US,en;q=0.5",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "192.140.151.53",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "PK",
+            "cf-ray": "9acc5336c7c3e278-MRS",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "origin": "null",
+            "priority": "u=0",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "192.140.151.53, 172.70.108.147",
+            "x-forwarded-host": "n8n1140.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-67-684bd97b65-9dnmf",
+            "x-is-trusted": "yes",
+            "x-real-ip": "192.140.151.53"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "doctorName": "Dr Cheema",
+            "clientId": "CLIENT002",
+            "productName": "medicine",
+            "quantity": "2",
+            "notes": ""
+          },
+          "webhookUrl": "https://n8n1140.app.n8n.cloud/webhook/submit-lab-order",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Check Client ID in Airtable": {
+      "main": [
+        [
+          {
+            "node": "Verify Client ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Client ID": {
+      "main": [
+        [
+          {
+            "node": "Is Authorized?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Airtable - Approved": {
+      "main": [
+        [
+          {
+            "node": "Notify Slack - Approved",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message to internal team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Slack - Approved": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Slack - Rejected": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook2": {
+      "main": [
+        [
+          {
+            "node": "Extract Form Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Form Data1": {
+      "main": [
+        [
+          {
+            "node": "Check Client ID in Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Authorized?1": {
+      "main": [
+        [
+          {
+            "node": "Save to Airtable - Approved",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save to Airtable - Rejected1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Security Alert": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message to internal team": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Airtable - Rejected1": {
+      "main": [
+        [
+          {
+            "node": "Send Security Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Slack - Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "45c0c500-8607-4c0a-ad3b-6975937e83c4",
+  "meta": {
+    "instanceId": "6d1253f076506f63eac9dd6e9df6330c0299c292b162fbd192751732eaaf00ff"
+  },
+  "id": "DLCoD_5cU8g98xyXW62Pt",
+  "tags": []
+}
