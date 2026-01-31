@@ -309,7 +309,7 @@
     },
     {
       "parameters": {
-        "sendTo": "muhammad.bilal.khan2005@gmail.com",
+        "sendTo": "abc@gmail.com",
         "subject": "=Order Confirmation - {{ $('Extract Form Data1').item.json.body.productName }}",
         "message": "=<h2>Order Confirmed</h2> <p>Dear {{ $json.clientCompany }},</p> <p>Your lab kit order has been received and confirmed:</p> <ul>   <li><strong>Doctor:</strong>{{ $('Extract Form Data1').item.json.body.doctorName }} </li>   <li><strong>Product:</strong> {{ $('Extract Form Data1').item.json.body.productName }}</li>   <li><strong>Quantity:</strong>{{ $('Extract Form Data1').item.json.body.quantity }}</li>   <li><strong>Order Time:</strong> {{ $('Extract Form Data1').item.json['Submission Time'] }}</li> </ul> <p>Your order will be processed and shipped shortly.</p> <p>Thank you for your business!</p>",
         "options": {
